@@ -1,0 +1,12 @@
+# fly.toml app configuration file generated for wucheplaner-reporting on 2023-07-30T10:11:25+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "wucheplaner-reporting"
+primary_region = "cdg"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[experimental]
+  auto_rollback = true

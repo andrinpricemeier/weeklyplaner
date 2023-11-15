@@ -1,0 +1,103 @@
+name: Documentation
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  build-docs:
+    name: Build docs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./docs
+    steps:
+      - name: 🛑 Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v3
+
+      - name: 👀 Read app name
+        uses: SebRollen/toml-action@v1.0.0
+        id: app_name_docs
+        with:
+          file: "docs/fly.toml"
+          field: "app"
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: ⚡️ Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: 🔑 Fly Registry Auth
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: |
+          flyctl auth docker -t ${{ secrets.FLY_API_TOKEN }}
+
+      - name: 🐳 Docker build
+        uses: docker/build-push-action@v3
+        with:
+          context: docs
+          push: true
+          tags: registry.fly.io/${{ steps.app_name_docs.outputs.value }}:${{ github.ref_name }}-${{ github.sha }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
+
+      # This ugly bit is necessary if you don't want your cache to grow forever
+      # till it hits GitHub's limit of 5GB.
+      # Temp fix
+      # https://github.com/docker/build-push-action/issues/252
+      # https://github.com/moby/buildkit/issues/1896
+      - name: 🚚 Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  deploy-docs:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./docs
+    needs: [build-docs]
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+
+      - name: ⬇Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Read app name
+        uses: SebRollen/toml-action@v1.0.0
+        id: app_name_docs
+        with:
+          file: "docs/fly.toml"
+          field: "app"
+
+      - name: Deploy Production
+        uses: superfly/flyctl-actions@1.3
+        with:
+          args: "deploy docs --image registry.fly.io/${{ steps.app_name_docs.outputs.value }}:${{ github.ref_name }}-${{ github.sha }}"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

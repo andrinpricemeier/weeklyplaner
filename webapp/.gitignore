@@ -1,0 +1,10 @@
+node_modules
+build
+public/build
+.env
+app/styles/output_tailwind.css
+test-results
+playwright-report/
+playwright/.cache/
+sonar-report.xml
+generated

@@ -1,0 +1,6 @@
+*
+!antora-playbook.yml
+!kroki.js
+!package.json
+!package-lock.json
+!main_component/

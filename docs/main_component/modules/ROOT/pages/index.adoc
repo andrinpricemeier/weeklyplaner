@@ -1,0 +1,4 @@
+= Willkommen zum Wucheplaner
+:navtitle: Einführung
+
+Das ist die Dokumentation für https://wucheplaner.kibunifu.com[Wucheplaner]!

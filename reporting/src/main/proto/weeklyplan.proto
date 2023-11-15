@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "ch.pricemeier.wucheplaner.api";
+option java_outer_classname = "WeeklyPlanGrpcProto";
+
+package services;
+
+service WeeklyPlaner {
+  rpc createWeeklyPlan (WeeklyPlanRequest) returns (WeeklyPlanReply) {}
+}
+
+message WeeklyPlanRequest {
+  string week_from = 1;
+  string week_to = 2;
+  string schoolClasses = 3;
+  repeated TaskMessage tasks = 4;
+}
+
+message TaskMessage {
+  string taskId = 1;
+  string subject = 2;
+  string imageName = 3;
+  string title = 4;
+  string description = 5;
+}
+
+message WeeklyPlanReply {
+  string reportUid = 1;
+  bytes report = 2;
+  ErrorInformation error = 3;
+}
+
+message ErrorInformation {
+  string week_from = 1;
+  string week_to = 2;
+  string schoolClasses = 3;
+  string tasks = 4;
+  string general_error = 5;
+  bool has_errors = 6;
+}
